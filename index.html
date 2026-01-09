@@ -17,14 +17,30 @@
       border-radius: 10px;
     }
     button {
-      display: block;
-      margin: 10px 0;
-      padding: 10px;
-      width: 100%;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+  display: block;
+  margin: 10px 0;
+  padding: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #334155;
+  color: white;
+  font-size: 16px;
+}
+
+button.selected {
+  background: #6366f1; /* blue */
+}
+
+button.correct {
+  background: #16a34a; /* green */
+}
+
+button.wrong {
+  background: #dc2626; /* red */
+}
+
   </style>
 </head>
 <body>
@@ -35,7 +51,6 @@
   <button onclick="nextQuestion()">Next</button>
   <p id="score"></p>
 </div>
-
 <script>
   const quiz = [
     {
@@ -52,8 +67,10 @@
 
   let current = 0;
   let score = 0;
+  let answered = false;
 
   function loadQuestion() {
+    answered = false;
     document.getElementById("question").innerText = quiz[current].question;
     const answersDiv = document.getElementById("answers");
     answersDiv.innerHTML = "";
@@ -61,12 +78,30 @@
     quiz[current].answers.forEach((answer, index) => {
       const btn = document.createElement("button");
       btn.innerText = answer;
-      btn.onclick = () => checkAnswer(index);
+
+      btn.onclick = () => selectAnswer(btn, index);
       answersDiv.appendChild(btn);
     });
   }
 
-  function checkAnswer(index) {
+  function selectAnswer(button, index) {
+    if (answered) return;
+    answered = true;
+
+    const buttons = document.querySelectorAll("#answers button");
+
+    buttons.forEach((btn, i) => {
+      btn.disabled = true;
+
+      if (i === quiz[current].correct) {
+        btn.classList.add("correct");
+      }
+
+      if (i === index && i !== quiz[current].correct) {
+        btn.classList.add("wrong");
+      }
+    });
+
     if (index === quiz[current].correct) {
       score++;
     }
@@ -78,12 +113,14 @@
       loadQuestion();
     } else {
       document.querySelector(".quiz-box").innerHTML =
-        `<h2>Quiz Complete!</h2><p>Your Score: ${score}/${quiz.length}</p>`;
+        `<h2>Quiz Complete!</h2>
+         <p>Your Score: ${score}/${quiz.length}</p>`;
     }
   }
 
   loadQuestion();
 </script>
+
 
 </body>
 </html>
