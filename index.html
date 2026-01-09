@@ -39,7 +39,7 @@
 <body>
 
 <!-- STEP 1: Setup Screen -->
-<div id="setup">
+  <div id="setup">
   <h2>Welcome to PrismaX AI Quiz!</h2>
   <p>Select number of questions:</p>
   <select id="numQuestions">
@@ -47,11 +47,25 @@
     <option value="20">20</option>
     <option value="50">50</option>
   </select>
+
+  <p>Select mode:</p>
+  <select id="mode">
+    <option value="timer">Timer Mode</option>
+    <option value="non-timer">Non-Timer Mode</option>
+  </select>
+
   <button onclick="startQuiz()">Start Quiz</button>
 </div>
 
+
 <!-- STEP 2: Quiz Screen (hidden initially) -->
+<div class="quiz-box" id="quizBox" style="display:none;"> 
 <div class="quiz-box" id="quizBox" style="display:none;">
+  <h2 id="question"></h2>
+  <div id="answers"></div>
+  <p id="timer" style="font-weight:bold;"></p> <!-- Timer display -->
+</div>
+
   <h2 id="question"></h2>
   <div id="answers"></div>
   <button onclick="nextQuestion()">Next</button>
@@ -59,108 +73,136 @@
 </div>
 <script>
   // Example questions (you can add up to 1000)
-  const allQuestions = [
-    { question: "What is PrismaX AI?", answers: ["A DeFi protocol", "A Social OS for AI & Robots", "An NFT marketplace"], correct: 1 },
-    { question: "What does PrismaX focus on?", answers: ["Gaming", "Robotics coordination", "Meme coins"], correct: 1 },
-    { question: "PrismaX helps robots do what?", answers: ["Dance", "Coordinate tasks", "Play games"], correct: 1 },
-    { question: "Which industry does PrismaX target?", answers: ["Finance", "Robotics & AI", "Food"], correct: 1 },
-    // ... add more questions
-  ];
 
-  let quiz = [];
-  let current = 0;
-  let selectedAnswer = null;
-  let userAnswers = []; // store what user selected
+const allQuestions = [
+  { question: "What is PrismaX AI?", answers: ["A DeFi protocol", "A Social OS for AI & Robots", "An NFT marketplace"], correct: 1 },
+  { question: "What does PrismaX focus on?", answers: ["Gaming", "Robotics coordination", "Meme coins"], correct: 1 },
+  { question: "PrismaX helps robots do what?", answers: ["Dance", "Coordinate tasks", "Play games"], correct: 1 },
+  { question: "Which industry does PrismaX target?", answers: ["Finance", "Robotics & AI", "Food"], correct: 1 },
+];
 
-  function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+let quiz = [];
+let current = 0;
+let selectedAnswer = null;
+let userAnswers = [];
+let timerInterval = null;
+let mode = "non-timer"; // default
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
   }
+  return array;
+}
 
-  function startQuiz() {
-    const num = parseInt(document.getElementById("numQuestions").value);
-    quiz = shuffleArray([...allQuestions]).slice(0, num);
-    current = 0;
-    selectedAnswer = null;
-    userAnswers = [];
+function startQuiz() {
+  const num = parseInt(document.getElementById("numQuestions").value);
+  mode = document.getElementById("mode").value;
+  quiz = shuffleArray([...allQuestions]).slice(0, num);
+  current = 0;
+  selectedAnswer = null;
+  userAnswers = [];
 
-    document.getElementById("setup").style.display = "none";
-    document.getElementById("quizBox").style.display = "block";
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("quizBox").style.display = "block";
 
+  loadQuestion();
+}
+
+function loadQuestion() {
+  selectedAnswer = null;
+  document.getElementById("question").innerText = quiz[current].question;
+  const answersDiv = document.getElementById("answers");
+  answersDiv.innerHTML = "";
+
+  quiz[current].answers.forEach((answer, index) => {
+    const btn = document.createElement("button");
+    btn.innerText = answer;
+    btn.onclick = () => selectAnswer(btn, index);
+    answersDiv.appendChild(btn);
+  });
+
+  if (mode === "timer") {
+    startTimer();
+  } else {
+    document.getElementById("timer").innerText = "";
+  }
+}
+
+function selectAnswer(button, index) {
+  const buttons = document.querySelectorAll("#answers button");
+  buttons.forEach(btn => btn.classList.remove("selected"));
+  button.classList.add("selected");
+  selectedAnswer = index;
+
+  if (mode === "non-timer") {
+    // auto-save and go to next question after 0.5s for UX
+    setTimeout(nextQuestion, 500);
+  }
+}
+
+function nextQuestion() {
+  // stop timer if any
+  clearInterval(timerInterval);
+
+  // save answer
+  userAnswers.push({ 
+    question: quiz[current].question,
+    answers: quiz[current].answers,
+    correct: quiz[current].correct,
+    selected: selectedAnswer
+  });
+
+  current++;
+  if (current < quiz.length) {
     loadQuestion();
+  } else {
+    showResults();
   }
+}
 
-  function loadQuestion() {
-    selectedAnswer = null;
-    document.getElementById("question").innerText = quiz[current].question;
-    const answersDiv = document.getElementById("answers");
-    answersDiv.innerHTML = "";
+// Timer functions
+function startTimer() {
+  let timeLeft = 10; // seconds per question
+  const timerEl = document.getElementById("timer");
+  timerEl.innerText = `Time left: ${timeLeft}s`;
 
-    quiz[current].answers.forEach((answer, index) => {
-      const btn = document.createElement("button");
-      btn.innerText = answer;
-      btn.onclick = () => selectAnswer(btn, index);
-      answersDiv.appendChild(btn);
-    });
-  }
-
-  function selectAnswer(button, index) {
-    const buttons = document.querySelectorAll("#answers button");
-    buttons.forEach(btn => btn.classList.remove("selected"));
-    button.classList.add("selected");
-    selectedAnswer = index;
-  }
-
-  function nextQuestion() {
-    if (selectedAnswer === null) {
-      alert("Please select an answer first");
-      return;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.innerText = `Time left: ${timeLeft}s`;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      // auto-save blank answer as null if user didn't click
+      selectedAnswer = selectedAnswer ?? null;
+      nextQuestion();
     }
+  }, 1000);
+}
 
-    // Save user answer
-    userAnswers.push({ 
-      question: quiz[current].question,
-      answers: quiz[current].answers,
-      correct: quiz[current].correct,
-      selected: selectedAnswer
-    });
+function showResults() {
+  const quizBox = document.getElementById("quizBox");
+  let score = 0;
+  let resultsHTML = `<h2>Quiz Complete!</h2>`;
 
-    current++;
-    if (current < quiz.length) {
-      loadQuestion();
-    } else {
-      showResults();
-    }
-  }
+  userAnswers.forEach((q, i) => {
+    const correctAnswer = q.answers[q.correct];
+    const userAnswer = q.selected !== null ? q.answers[q.selected] : "(No answer)";
+    if (q.selected === q.correct) score++;
 
-  function showResults() {
-    const quizBox = document.getElementById("quizBox");
-    let score = 0;
-    let resultsHTML = `<h2>Quiz Complete!</h2>`;
-    
-    userAnswers.forEach((q, i) => {
-      const correctAnswer = q.answers[q.correct];
-      const userAnswer = q.answers[q.selected];
-      if (q.selected === q.correct) score++;
+    resultsHTML += `
+      <div style="margin-bottom:15px;">
+        <strong>Q${i + 1}: ${q.question}</strong><br>
+        Your answer: ${userAnswer} <br>
+        Correct answer: ${correctAnswer} <br>
+      </div>
+    `;
+  });
 
-      resultsHTML += `
-        <div style="margin-bottom:15px;">
-          <strong>Q${i + 1}: ${q.question}</strong><br>
-          Your answer: ${userAnswer} <br>
-          Correct answer: ${correctAnswer} <br>
-        </div>
-      `;
-    });
-
-    resultsHTML += `<h3>Your Score: ${score} / ${userAnswers.length}</h3>`;
-
-    quizBox.innerHTML = resultsHTML;
-  }
+  resultsHTML += `<h3>Your Score: ${score} / ${userAnswers.length}</h3>`;
+  quizBox.innerHTML = resultsHTML;
+}
 </script>
-
 
 </body>
 </html>
