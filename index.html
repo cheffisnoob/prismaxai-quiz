@@ -11,7 +11,7 @@
     }
 
     .quiz-box {
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       background: #1e293b;
       padding: 20px;
@@ -34,13 +34,20 @@
     button.selected {
       background: #6366f1;
     }
+
+    select {
+      padding: 8px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
 
-<!-- STEP 1: Setup Screen -->
-  <div id="setup">
+<!-- Setup Screen -->
+<div id="setup">
   <h2>Welcome to PrismaX AI Quiz!</h2>
+
   <p>Select number of questions:</p>
   <select id="numQuestions">
     <option value="10">10</option>
@@ -57,28 +64,20 @@
   <button onclick="startQuiz()">Start Quiz</button>
 </div>
 
-
-<!-- STEP 2: Quiz Screen (hidden initially) -->
-<div class="quiz-box" id="quizBox" style="display:none;"> 
+<!-- Quiz Screen -->
 <div class="quiz-box" id="quizBox" style="display:none;">
   <h2 id="question"></h2>
   <div id="answers"></div>
-  <p id="timer" style="font-weight:bold;"></p> <!-- Timer display -->
+  <p id="timer" style="font-weight:bold;"></p>
 </div>
 
-  <h2 id="question"></h2>
-  <div id="answers"></div>
-  <button onclick="nextQuestion()">Next</button>
-  <p id="score"></p>
-</div>
 <script>
-  // Example questions (you can add up to 1000)
-
 const allQuestions = [
   { question: "What is PrismaX AI?", answers: ["A DeFi protocol", "A Social OS for AI & Robots", "An NFT marketplace"], correct: 1 },
   { question: "What does PrismaX focus on?", answers: ["Gaming", "Robotics coordination", "Meme coins"], correct: 1 },
   { question: "PrismaX helps robots do what?", answers: ["Dance", "Coordinate tasks", "Play games"], correct: 1 },
   { question: "Which industry does PrismaX target?", answers: ["Finance", "Robotics & AI", "Food"], correct: 1 },
+  // ...add up to 1000 questions
 ];
 
 let quiz = [];
@@ -86,7 +85,7 @@ let current = 0;
 let selectedAnswer = null;
 let userAnswers = [];
 let timerInterval = null;
-let mode = "non-timer"; // default
+let mode = "non-timer";
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -99,6 +98,7 @@ function shuffleArray(array) {
 function startQuiz() {
   const num = parseInt(document.getElementById("numQuestions").value);
   mode = document.getElementById("mode").value;
+
   quiz = shuffleArray([...allQuestions]).slice(0, num);
   current = 0;
   selectedAnswer = null;
@@ -112,6 +112,8 @@ function startQuiz() {
 
 function loadQuestion() {
   selectedAnswer = null;
+  clearInterval(timerInterval);
+
   document.getElementById("question").innerText = quiz[current].question;
   const answersDiv = document.getElementById("answers");
   answersDiv.innerHTML = "";
@@ -123,11 +125,9 @@ function loadQuestion() {
     answersDiv.appendChild(btn);
   });
 
-  if (mode === "timer") {
-    startTimer();
-  } else {
-    document.getElementById("timer").innerText = "";
-  }
+  // start timer if timer mode
+  if (mode === "timer") startTimer();
+  else document.getElementById("timer").innerText = "";
 }
 
 function selectAnswer(button, index) {
@@ -137,17 +137,15 @@ function selectAnswer(button, index) {
   selectedAnswer = index;
 
   if (mode === "non-timer") {
-    // auto-save and go to next question after 0.5s for UX
+    // auto advance after short delay
     setTimeout(nextQuestion, 500);
   }
 }
 
 function nextQuestion() {
-  // stop timer if any
   clearInterval(timerInterval);
 
-  // save answer
-  userAnswers.push({ 
+  userAnswers.push({
     question: quiz[current].question,
     answers: quiz[current].answers,
     correct: quiz[current].correct,
@@ -162,7 +160,7 @@ function nextQuestion() {
   }
 }
 
-// Timer functions
+// Timer logic
 function startTimer() {
   let timeLeft = 10; // seconds per question
   const timerEl = document.getElementById("timer");
@@ -173,8 +171,6 @@ function startTimer() {
     timerEl.innerText = `Time left: ${timeLeft}s`;
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      // auto-save blank answer as null if user didn't click
-      selectedAnswer = selectedAnswer ?? null;
       nextQuestion();
     }
   }, 1000);
@@ -193,8 +189,8 @@ function showResults() {
     resultsHTML += `
       <div style="margin-bottom:15px;">
         <strong>Q${i + 1}: ${q.question}</strong><br>
-        Your answer: ${userAnswer} <br>
-        Correct answer: ${correctAnswer} <br>
+        Your answer: ${userAnswer}<br>
+        Correct answer: ${correctAnswer}<br>
       </div>
     `;
   });
