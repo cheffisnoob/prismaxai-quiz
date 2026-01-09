@@ -57,19 +57,20 @@
   <button onclick="nextQuestion()">Next</button>
   <p id="score"></p>
 </div>
-
 <script>
-  // Example questions (you can add up to 1000 later)
+  // Example questions (you can add up to 1000)
   const allQuestions = [
-    { question: "What is PrismaX AI?", answers: ["A DeFi protocol", "A Social OS for AI & Robots", "An NFT marketplace"] },
-    { question: "What does PrismaX focus on?", answers: ["Gaming", "Robotics coordination", "Meme coins"] },
-    { question: "PrismaX helps robots do what?", answers: ["Dance", "Coordinate tasks", "Play games"] },
-    { question: "Which industry does PrismaX target?", answers: ["Finance", "Robotics & AI", "Food"] },
+    { question: "What is PrismaX AI?", answers: ["A DeFi protocol", "A Social OS for AI & Robots", "An NFT marketplace"], correct: 1 },
+    { question: "What does PrismaX focus on?", answers: ["Gaming", "Robotics coordination", "Meme coins"], correct: 1 },
+    { question: "PrismaX helps robots do what?", answers: ["Dance", "Coordinate tasks", "Play games"], correct: 1 },
+    { question: "Which industry does PrismaX target?", answers: ["Finance", "Robotics & AI", "Food"], correct: 1 },
+    // ... add more questions
   ];
 
   let quiz = [];
   let current = 0;
   let selectedAnswer = null;
+  let userAnswers = []; // store what user selected
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -84,6 +85,7 @@
     quiz = shuffleArray([...allQuestions]).slice(0, num);
     current = 0;
     selectedAnswer = null;
+    userAnswers = [];
 
     document.getElementById("setup").style.display = "none";
     document.getElementById("quizBox").style.display = "block";
@@ -118,14 +120,47 @@
       return;
     }
 
+    // Save user answer
+    userAnswers.push({ 
+      question: quiz[current].question,
+      answers: quiz[current].answers,
+      correct: quiz[current].correct,
+      selected: selectedAnswer
+    });
+
     current++;
     if (current < quiz.length) {
       loadQuestion();
     } else {
-      document.getElementById("quizBox").innerHTML = `<h2>Quiz Complete!</h2>`;
+      showResults();
     }
   }
+
+  function showResults() {
+    const quizBox = document.getElementById("quizBox");
+    let score = 0;
+    let resultsHTML = `<h2>Quiz Complete!</h2>`;
+    
+    userAnswers.forEach((q, i) => {
+      const correctAnswer = q.answers[q.correct];
+      const userAnswer = q.answers[q.selected];
+      if (q.selected === q.correct) score++;
+
+      resultsHTML += `
+        <div style="margin-bottom:15px;">
+          <strong>Q${i + 1}: ${q.question}</strong><br>
+          Your answer: ${userAnswer} <br>
+          Correct answer: ${correctAnswer} <br>
+        </div>
+      `;
+    });
+
+    resultsHTML += `<h3>Your Score: ${score} / ${userAnswers.length}</h3>`;
+
+    quizBox.innerHTML = resultsHTML;
+  }
 </script>
+
 
 </body>
 </html>
