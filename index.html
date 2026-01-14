@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>PrismaX AI Quiz</title>
-
   <style>
     body {
       background: #0f172a;
@@ -49,38 +48,25 @@
     }
   </style>
 </head>
-
 <body>
-
 <div class="box">
 
   <!-- START SCREEN -->
   <div id="startScreen">
     <h2>PrismaX AI Quiz</h2>
 
-    <p><strong>Mode</strong></p>
-    <label>
-      <input type="radio" name="mode" value="timer" checked>
-      Timer Mode
-    </label><br>
+    <p><strong>Mode:</strong></p>
+    <label><input type="radio" name="mode" value="timer" checked> Timer Mode</label><br>
+    <label><input type="radio" name="mode" value="notimer"> Non-Timer Mode</label>
 
-    <label>
-      <input type="radio" name="mode" value="notimer">
-      Non-Timer Mode
-    </label>
-
-    <p><strong>Number of Questions</strong></p>
+    <p><strong>Number of Questions:</strong></p>
     <select id="questionCount">
       <option value="10">10</option>
       <option value="20">20</option>
     </select>
 
     <br><br>
-
-    <!-- ✅ START QUIZ BUTTON -->
-    <button id="startBtn" onclick="startQuiz()">
-      Start Quiz
-    </button>
+    <button id="startBtn" onclick="startQuiz()">Start Quiz</button>
   </div>
 
   <!-- QUIZ SCREEN -->
@@ -88,9 +74,7 @@
     <h3 id="question"></h3>
     <div id="answers"></div>
     <p id="timer"></p>
-    <button id="nextBtn" onclick="nextQuestion()" disabled>
-      Next
-    </button>
+    <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
   </div>
 
   <!-- RESULT SCREEN -->
@@ -99,30 +83,15 @@
 </div>
 
 <script>
-  /* =========================
-     QUESTION POOL
-     ========================= */
+  // ====== QUESTION POOL ======
   const quiz = [
-    {
-      question: "What is PrismaX AI?",
-      answers: ["DeFi protocol", "Social OS for AI & Robots", "NFT marketplace"],
-      correct: 1
-    },
-    {
-      question: "What does PrismaX coordinate?",
-      answers: ["Memes", "Robots & AI agents", "Gaming guilds"],
-      correct: 1
-    },
-    {
-      question: "PrismaX focuses on?",
-      answers: ["Centralization", "On-chain coordination", "Mining"],
-      correct: 1
-    }
+    { question: "What is PrismaX AI?", answers: ["DeFi protocol", "Social OS for AI & Robots", "NFT marketplace"], correct: 1 },
+    { question: "What does PrismaX coordinate?", answers: ["Memes", "Robots & AI agents", "Gaming guilds"], correct: 1 },
+    { question: "PrismaX focuses on?", answers: ["Centralization", "On-chain coordination", "Mining"], correct: 1 }
+    // Add more questions as needed
   ];
 
-  /* =========================
-     GLOBAL VARIABLES
-     ========================= */
+  // ====== GLOBAL VARIABLES ======
   let mode = "timer";
   let quizCount = 10;
   let selectedQuiz = [];
@@ -132,9 +101,7 @@
   let userAnswers = [];
   let timerInterval;
 
-  /* =========================
-     SHUFFLE FUNCTION
-     ========================= */
+  // ====== SHUFFLE FUNCTION ======
   function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -143,82 +110,19 @@
     return array;
   }
 
-  /* =========================
-     BUILD QUIZ (KEY FIX)
-     Ensures 10 or 20 always
-     ========================= */
+  // ====== BUILD QUIZ FUNCTION ======
   function buildQuiz(pool, count) {
     let result = [];
-
     while (result.length < count) {
       result = result.concat(shuffle([...pool]));
     }
-
     return result.slice(0, count);
   }
 
-  /* =========================
-     START QUIZ
-     ========================= */
+  // ====== START QUIZ ======
   function startQuiz() {
     mode = document.querySelector('input[name="mode"]:checked').value;
     quizCount = parseInt(document.getElementById("questionCount").value);
 
     document.getElementById("startScreen").style.display = "none";
-    document.getElementById("quizBox").style.display = "block";
-
-    current = 0;
-    score = 0;
-    userAnswers = [];
-
-    selectedQuiz = buildQuiz(quiz, quizCount);
-    loadQuestion();
-  }
-
-  /* =========================
-     LOAD QUESTION
-     ========================= */
-  function loadQuestion() {
-    clearInterval(timerInterval);
-    selectedAnswer = null;
-
-    document.getElementById("question").innerText =
-      `Question ${current + 1} of ${selectedQuiz.length}: ${selectedQuiz[current].question}`;
-
-    const answersDiv = document.getElementById("answers");
-    answersDiv.innerHTML = "";
-
-    selectedQuiz[current].answers.forEach((ans, i) => {
-      const btn = document.createElement("button");
-      btn.innerText = ans;
-      btn.onclick = () => selectAnswer(btn, i);
-      answersDiv.appendChild(btn);
-    });
-
-    const nextBtn = document.getElementById("nextBtn");
-    const timerEl = document.getElementById("timer");
-
-    if (mode === "timer") {
-      nextBtn.style.display = "block";
-      nextBtn.disabled = true;
-      timerEl.style.display = "block";
-      startTimer();
-    } else {
-      nextBtn.style.display = "none";
-      timerEl.innerText = "";
-    }
-  }
-
-  /* =========================
-     SELECT ANSWER
-     ========================= */
-  function selectAnswer(button, index) {
-    document
-      .querySelectorAll("#answers button")
-      .forEach(b => b.classList.remove("selected"));
-
-    button.classList.add("selected");
-    selectedAnswer = index;
-
-    if (mode === "timer") {
-      document.getElementB
+    document.getElementById("quizBox").style.dis
