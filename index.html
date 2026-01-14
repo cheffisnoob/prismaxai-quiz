@@ -16,14 +16,13 @@
     }
 
     .box {
-      width: 400px;
+      width: 420px;
       background: #1e293b;
       padding: 20px;
       border-radius: 10px;
     }
 
     button {
-      display: block;
       width: 100%;
       padding: 12px;
       margin: 8px 0;
@@ -31,8 +30,8 @@
       border-radius: 6px;
       background: #334155;
       color: white;
-      cursor: pointer;
       font-size: 16px;
+      cursor: pointer;
     }
 
     button.selected {
@@ -44,8 +43,9 @@
       cursor: not-allowed;
     }
 
-    #nextBtn {
-      margin-top: 15px;
+    #timer {
+      font-weight: bold;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -58,11 +58,11 @@
   <div id="startScreen">
     <h2>PrismaX AI Quiz</h2>
 
-    <p>Mode:</p>
+    <p><strong>Mode</strong></p>
     <label><input type="radio" name="mode" value="timer" checked> Timer</label><br>
     <label><input type="radio" name="mode" value="notimer"> Non-Timer</label>
 
-    <p>Questions:</p>
+    <p><strong>Number of Questions</strong></p>
     <select id="questionCount">
       <option value="10">10</option>
       <option value="20">20</option>
@@ -72,7 +72,7 @@
     <button onclick="startQuiz()">Start Quiz</button>
   </div>
 
-  <!-- QUIZ -->
+  <!-- QUIZ SCREEN -->
   <div id="quizBox" style="display:none;">
     <h3 id="question"></h3>
     <div id="answers"></div>
@@ -80,12 +80,15 @@
     <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
   </div>
 
-  <!-- RESULT -->
+  <!-- RESULT SCREEN -->
   <div id="resultBox" style="display:none;"></div>
 
 </div>
 
 <script>
+  /* =======================
+     QUESTION POOL
+     ======================= */
   const quiz = [
     {
       question: "What is PrismaX AI?",
@@ -102,9 +105,12 @@
       answers: ["Centralization", "On-chain coordination", "Mining"],
       correct: 1
     }
-    // 👉 you can add up to 1000 questions here
+    // You can add more questions anytime
   ];
 
+  /* =======================
+     GLOBAL VARIABLES
+     ======================= */
   let mode = "timer";
   let quizCount = 10;
   let selectedQuiz = [];
@@ -114,132 +120,7 @@
   let userAnswers = [];
   let timerInterval;
 
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-  }
-
-  function startQuiz() {
-    mode = document.querySelector('input[name="mode"]:checked').value;
-    quizCount = parseInt(document.getElementById("questionCount").value);
-
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("quizBox").style.display = "block";
-
-    selectedQuiz = shuffle([...quiz]).slice(0, quizCount);
-    current = 0;
-    score = 0;
-    userAnswers = [];
-
-    loadQuestion();
-  }
-
-  function loadQuestion() {
-    clearInterval(timerInterval);
-    selectedAnswer = null;
-
-    document.getElementById("question").innerText =
-      `${current + 1}. ${selectedQuiz[current].question}`;
-
-    const answersDiv = document.getElementById("answers");
-    answersDiv.innerHTML = "";
-
-    selectedQuiz[current].answers.forEach((ans, i) => {
-      const btn = document.createElement("button");
-      btn.innerText = ans;
-      btn.onclick = () => selectAnswer(btn, i);
-      answersDiv.appendChild(btn);
-    });
-
-    const nextBtn = document.getElementById("nextBtn");
-    const timerEl = document.getElementById("timer");
-
-    if (mode === "timer") {
-      nextBtn.style.display = "block";
-      nextBtn.disabled = true;
-      timerEl.style.display = "block";
-      startTimer();
-    } else {
-      nextBtn.style.display = "none";
-      timerEl.innerText = "";
-    }
-  }
-
-  function selectAnswer(button, index) {
-    document.querySelectorAll("#answers button")
-      .forEach(b => b.classList.remove("selected"));
-
-    button.classList.add("selected");
-    selectedAnswer = index;
-
-    if (mode === "timer") {
-      document.getElementById("nextBtn").disabled = false;
-    } else {
-      setTimeout(nextQuestion, 400);
-    }
-  }
-
-  function startTimer() {
-    let timeLeft = 10;
-    const timerEl = document.getElementById("timer");
-    timerEl.innerText = `Time left: ${timeLeft}s`;
-
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      timerEl.innerText = `Time left: ${timeLeft}s`;
-
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        nextQuestion();
-      }
-    }, 1000);
-  }
-
-  function nextQuestion() {
-    if (mode === "timer" && selectedAnswer === null) {
-      alert("Select an answer first");
-      return;
-    }
-
-    userAnswers.push({
-      q: selectedQuiz[current].question,
-      selected: selectedAnswer,
-      correct: selectedQuiz[current].correct,
-      answers: selectedQuiz[current].answers
-    });
-
-    if (selectedAnswer === selectedQuiz[current].correct) score++;
-
-    current++;
-
-    if (current < selectedQuiz.length) {
-      loadQuestion();
-    } else {
-      showResults();
-    }
-  }
-
-  function showResults() {
-    document.getElementById("quizBox").style.display = "none";
-    const box = document.getElementById("resultBox");
-    box.style.display = "block";
-
-    let html = `<h2>Score: ${score} / ${selectedQuiz.length}</h2>`;
-
-    userAnswers.forEach((a, i) => {
-      html += `
-        <p><strong>Q${i + 1}:</strong> ${a.q}<br>
-        Your answer: ${a.selected !== null ? a.answers[a.selected] : "No answer"}<br>
-        Correct answer: ${a.answers[a.correct]}</p>
-      `;
-    });
-
-    box.innerHTML = html;
-  }
-</script>
-
-</body>
-</html>
+  /* =======================
+     SHUFFLE FUNCTION
+     ======================= */
+  function shuffle(a
