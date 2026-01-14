@@ -37,7 +37,7 @@
       background: #6366f1;
     }
 
-    button:enabled {
+    button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
@@ -66,7 +66,7 @@
     </select>
 
     <br><br>
-    <button id="startBtn" onclick="startQuiz()">Start Quiz</button>
+    <button onclick="startQuiz()">Start Quiz</button>
   </div>
 
   <!-- QUIZ SCREEN -->
@@ -88,7 +88,7 @@
     { question: "What is PrismaX AI?", answers: ["DeFi protocol", "Social OS for AI & Robots", "NFT marketplace"], correct: 1 },
     { question: "What does PrismaX coordinate?", answers: ["Memes", "Robots & AI agents", "Gaming guilds"], correct: 1 },
     { question: "PrismaX focuses on?", answers: ["Centralization", "On-chain coordination", "Mining"], correct: 1 }
-    // Add more questions as needed
+    // Add more questions here
   ];
 
   // ====== GLOBAL VARIABLES ======
@@ -110,10 +110,10 @@
     return array;
   }
 
-  // ====== BUILD QUIZ FUNCTION ======
+  // ====== BUILD QUIZ ======
   function buildQuiz(pool, count) {
     let result = [];
-    while (result.length < count) {
+    while(result.length < count) {
       result = result.concat(shuffle([...pool]));
     }
     return result.slice(0, count);
@@ -125,4 +125,114 @@
     quizCount = parseInt(document.getElementById("questionCount").value);
 
     document.getElementById("startScreen").style.display = "none";
-    document.getElementById("quizBox").style.dis
+    document.getElementById("quizBox").style.display = "block";
+
+    current = 0;
+    score = 0;
+    userAnswers = [];
+
+    selectedQuiz = buildQuiz(quiz, quizCount);
+    loadQuestion();
+  }
+
+  // ====== LOAD QUESTION ======
+  function loadQuestion() {
+    clearInterval(timerInterval);
+    selectedAnswer = null;
+
+    const q = selectedQuiz[current];
+    document.getElementById("question").innerText = `Question ${current+1} of ${selectedQuiz.length}: ${q.question}`;
+
+    const answersDiv = document.getElementById("answers");
+    answersDiv.innerHTML = "";
+    q.answers.forEach((ans, i) => {
+      const btn = document.createElement("button");
+      btn.innerText = ans;
+      btn.onclick = () => selectAnswer(btn, i);
+      answersDiv.appendChild(btn);
+    });
+
+    const nextBtn = document.getElementById("nextBtn");
+    const timerEl = document.getElementById("timer");
+
+    if(mode === "timer") {
+      nextBtn.style.display = "block";
+      nextBtn.disabled = true;
+      timerEl.style.display = "block";
+      startTimer();
+    } else {
+      nextBtn.style.display = "none";
+      timerEl.innerText = "";
+    }
+  }
+
+  // ====== SELECT ANSWER ======
+  function selectAnswer(button, index) {
+    document.querySelectorAll("#answers button").forEach(b => b.classList.remove("selected"));
+    button.classList.add("selected");
+    selectedAnswer = index;
+
+    if(mode === "timer") {
+      document.getElementById("nextBtn").disabled = false;
+    } else {
+      setTimeout(nextQuestion, 400);
+    }
+  }
+
+  // ====== TIMER ======
+  function startTimer() {
+    let timeLeft = 3;
+    const timerEl = document.getElementById("timer");
+    timerEl.innerText = `Time left: ${timeLeft}s`;
+
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      timerEl.innerText = `Time left: ${timeLeft}s`;
+
+      if(timeLeft <= 0) {
+        clearInterval(timerInterval);
+        nextQuestion();
+      }
+    }, 1000);
+  }
+
+  // ====== NEXT QUESTION ======
+  function nextQuestion() {
+    if(mode === "timer" && selectedAnswer === null) return;
+
+    userAnswers.push({
+      question: selectedQuiz[current].question,
+      selected: selectedAnswer,
+      correct: selectedQuiz[current].correct,
+      answers: selectedQuiz[current].answers
+    });
+
+    if(selectedAnswer === selectedQuiz[current].correct) score++;
+
+    current++;
+    if(current < selectedQuiz.length) {
+      loadQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  // ====== SHOW RESULTS ======
+  function showResults() {
+    document.getElementById("quizBox").style.display = "none";
+    const box = document.getElementById("resultBox");
+    box.style.display = "block";
+
+    let html = `<h2>Score: ${score} / ${selectedQuiz.length}</h2>`;
+    userAnswers.forEach((a, i) => {
+      html += `<p>
+        <strong>Q${i+1}:</strong> ${a.question}<br>
+        Your answer: ${a.selected !== null ? a.answers[a.selected] : "No answer"}<br>
+        Correct answer: ${a.answers[a.correct]}
+      </p>`;
+    });
+    box.innerHTML = html;
+  }
+</script>
+</body>
+</html>
