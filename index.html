@@ -69,6 +69,9 @@
   <h2 id="question"></h2>
   <div id="answers"></div>
   <p id="timer" style="font-weight:bold;"></p>
+  <button id="submitBtn" onclick="submitAnswer()" style="display:none;">
+    Submit
+  </button>
 </div>
 
 <script>
@@ -107,10 +110,7 @@ function startQuiz() {
   document.getElementById("setup").style.display = "none";
   document.getElementById("quizBox").style.display = "block";
 
-  loadQuestion();
-}
-
-function loadQuestion() {
+  function loadQuestion() {
   selectedAnswer = null;
   clearInterval(timerInterval);
 
@@ -125,22 +125,31 @@ function loadQuestion() {
     answersDiv.appendChild(btn);
   });
 
-  // start timer if timer mode
-  if (mode === "timer") startTimer();
-  else document.getElementById("timer").innerText = "";
-}
+  const submitBtn = document.getElementById("submitBtn");
 
-function selectAnswer(button, index) {
+  if (mode === "timer") {
+    submitBtn.style.display = "block";
+    submitBtn.disabled = true; // disabled until user selects
+    startTimer();
+  } else {
+    submitBtn.style.display = "none";
+    document.getElementById("timer").innerText = "";
+  }
+}
+  function selectAnswer(button, index) {
   const buttons = document.querySelectorAll("#answers button");
   buttons.forEach(btn => btn.classList.remove("selected"));
+
   button.classList.add("selected");
   selectedAnswer = index;
 
-  if (mode === "non-timer") {
-    // auto advance after short delay
-    setTimeout(nextQuestion, 500);
+  if (mode === "timer") {
+    document.getElementById("submitBtn").disabled = false;
+  } else {
+    setTimeout(nextQuestion, 500); // non-timer auto-next
   }
 }
+
 
 function nextQuestion() {
   clearInterval(timerInterval);
@@ -161,20 +170,23 @@ function nextQuestion() {
 }
 
 // Timer logic
+
 function startTimer() {
-  let timeLeft = 10; // seconds per question
+  let timeLeft = 10;
   const timerEl = document.getElementById("timer");
   timerEl.innerText = `Time left: ${timeLeft}s`;
 
   timerInterval = setInterval(() => {
     timeLeft--;
     timerEl.innerText = `Time left: ${timeLeft}s`;
+
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      nextQuestion();
+      submitAnswer(); // auto-submit
     }
   }, 1000);
 }
+
 
 function showResults() {
   const quizBox = document.getElementById("quizBox");
@@ -194,6 +206,10 @@ function showResults() {
       </div>
     `;
   });
+function submitAnswer() {
+  clearInterval(timerInterval);
+  nextQuestion();
+}
 
   resultsHTML += `<h3>Your Score: ${score} / ${userAnswers.length}</h3>`;
   quizBox.innerHTML = resultsHTML;
