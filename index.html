@@ -2,235 +2,687 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PrismaX AI Quiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --black: #202020;
+      --cream: #DFD8D0;
+      --white: #FFFFFF;
+      --bg: #161616;
+      --card: #1e1e1e;
+      --border: rgba(223,216,208,0.12);
+      --text: #DFD8D0;
+      --dim: #6b6460;
+      --accent: #DFD8D0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: #0f172a; /* simple dark background */
-      color: white;
-      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
     }
 
-    .box {
-      width: 420px;
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 10px;
+    /* Subtle grain texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.6;
     }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: none;
-      border-radius: 6px;
-      background: #334155;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
+    /* Soft radial vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+      z-index: 0;
+      pointer-events: none;
     }
 
-    button.selected {
-      background: #6366f1;
+    .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .particle {
+      position: absolute; width: 1px; height: 1px;
+      background: var(--cream); border-radius: 50%;
+      animation: float linear infinite; opacity: 0;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh); opacity: 0; }
+      10% { opacity: 0.25; } 90% { opacity: 0.25; }
+      100% { transform: translateY(-100px); opacity: 0; }
     }
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    .container { width: 540px; position: relative; z-index: 10; padding: 20px; }
+
+    .header { text-align: center; margin-bottom: 28px; animation: fadeDown 0.7s ease; }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px; font-weight: 900; letter-spacing: 8px;
+      color: var(--white);
+      display: inline-block;
+      text-transform: uppercase;
     }
 
-    #timer {
-      font-weight: bold;
-      margin-top: 10px;
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px; padding: 36px;
+      position: relative; overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 1px 0 rgba(223,216,208,0.06) inset;
     }
+
+    /* Top accent line */
+    .card-top-line {
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cream), transparent);
+      opacity: 0.25;
+    }
+
+    .section-label {
+      font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: 4px;
+      color: var(--dim); text-transform: uppercase; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+    .mode-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 22px; }
+    .mode-option { position: relative; }
+    .mode-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .mode-option label {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 16px 10px; border: 1px solid var(--border); border-radius: 3px;
+      cursor: pointer; transition: all 0.25s ease; background: rgba(223,216,208,0.02);
+      font-size: 11px; font-weight: 500; letter-spacing: 2px; color: var(--dim);
+      text-transform: uppercase;
+    }
+    .mode-option label .icon { font-size: 18px; }
+    .mode-option input:checked + label {
+      border-color: var(--cream); background: rgba(223,216,208,0.07); color: var(--cream);
+    }
+    .mode-option label:hover { border-color: rgba(223,216,208,0.3); color: var(--text); }
+
+    .count-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 28px; }
+    .count-option { position: relative; }
+    .count-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .count-option label {
+      display: flex; align-items: center; justify-content: center;
+      padding: 14px; border: 1px solid var(--border); border-radius: 3px;
+      cursor: pointer; transition: all 0.25s ease;
+      font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700;
+      color: var(--dim); background: rgba(223,216,208,0.02); flex-direction: column; gap: 2px;
+    }
+    .count-option label .qlabel { font-size: 8px; font-weight: 400; letter-spacing: 2px; font-family: 'DM Sans', sans-serif; text-transform: uppercase; }
+    .count-option input:checked + label {
+      border-color: var(--cream); background: rgba(223,216,208,0.07); color: var(--cream);
+    }
+    .count-option label:hover { border-color: rgba(223,216,208,0.3); color: var(--text); }
+
+    .btn-start {
+      width: 100%; padding: 16px; background: var(--cream);
+      border: none; border-radius: 3px; color: var(--black);
+      font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 4px; text-transform: uppercase; cursor: pointer;
+      position: relative; overflow: hidden; transition: all 0.25s ease;
+    }
+    .btn-start:hover { background: var(--white); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .btn-start span { position:relative; z-index:1; }
+
+    .progress-wrap { margin-bottom: 22px; }
+    .progress-info { display:flex; justify-content:space-between; font-size:10px; letter-spacing:2px; color:var(--dim); margin-bottom:10px; text-transform: uppercase; }
+    .progress-bar { height:1px; background:rgba(223,216,208,0.1); overflow:hidden; }
+    .progress-fill { height:100%; background: var(--cream); transition:width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+    .question-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 19px; font-weight: 400; line-height: 1.55;
+      color: var(--white); margin-bottom: 22px; min-height: 60px;
+    }
+
+    .timer-wrap { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+    .timer-arc { position:relative; width:44px; height:44px; flex-shrink:0; }
+    .timer-arc svg { transform:rotate(-90deg); }
+    .timer-arc .track { fill:none; stroke:rgba(223,216,208,0.1); stroke-width:2; }
+    .timer-arc .fill { fill:none; stroke:var(--cream); stroke-width:2; stroke-linecap:round; stroke-dasharray:113; stroke-dashoffset:0; transition:stroke-dashoffset 1s linear, stroke 0.3s; }
+    .timer-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:14px; font-weight:700; color:var(--cream); }
+    .timer-label { font-size:10px; color:var(--dim); letter-spacing:2px; flex:1; text-transform:uppercase; }
+
+    .streak { display:inline-flex; align-items:center; gap:4px; font-size:10px; letter-spacing:1px; color:var(--cream); background:rgba(223,216,208,0.08); border:1px solid rgba(223,216,208,0.2); padding:3px 10px; border-radius:2px; text-transform:uppercase; }
+
+    .answers { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+    .answer-btn {
+      width:100%; padding:14px 18px; background: rgba(223,216,208,0.03);
+      border:1px solid var(--border); border-radius:3px; color:var(--text);
+      font-family:'DM Sans',sans-serif; font-size:14px; font-weight:400;
+      cursor:pointer; text-align:left; transition:all 0.2s ease;
+      display:flex; align-items:center; gap:14px;
+    }
+    .answer-btn .idx { font-size:10px; letter-spacing:1px; color:var(--dim); width:16px; flex-shrink:0; transition:color 0.2s; text-transform:uppercase; font-weight:600; }
+    .answer-btn:hover { border-color:rgba(223,216,208,0.35); background:rgba(223,216,208,0.06); color:var(--white); }
+    .answer-btn:hover .idx { color:var(--cream); }
+    .answer-btn.selected { border-color:var(--cream); background:rgba(223,216,208,0.09); color:var(--white); }
+    .answer-btn.selected .idx { color:var(--cream); }
+    .answer-btn.correct { border-color:rgba(223,216,208,0.8); background:rgba(223,216,208,0.12); color:var(--white); }
+    .answer-btn.wrong { border-color:rgba(223,216,208,0.2); background:rgba(0,0,0,0.2); color:var(--dim); }
+    .answer-btn:disabled { cursor:not-allowed; }
+    .answer-btn:disabled:not(.correct):not(.wrong):not(.selected) { opacity:0.3; }
+
+    .btn-next {
+      width:100%; padding:14px; background:transparent;
+      border:1px solid rgba(223,216,208,0.2); border-radius:3px; color:var(--dim);
+      font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:3px;
+      text-transform:uppercase; cursor:pointer; transition:all 0.25s;
+    }
+    .btn-next:not(:disabled):hover { border-color:var(--cream); color:var(--cream); }
+    .btn-next:disabled { opacity:0.25; cursor:not-allowed; }
+
+    .score-badge { position:absolute; top:22px; right:22px; font-size:10px; letter-spacing:2px; color:var(--dim); background:rgba(223,216,208,0.05); border:1px solid var(--border); padding:4px 12px; border-radius:2px; text-transform:uppercase; }
+
+    .results { text-align:center; animation:fadeUp 0.5s ease; }
+    .score-ring { width:120px; height:120px; margin:16px auto; position:relative; }
+    .score-ring svg { transform:rotate(-90deg); }
+    .score-ring .ring-track { fill:none; stroke:rgba(223,216,208,0.08); stroke-width:4; }
+    .score-ring .ring-fill { fill:none; stroke-width:4; stroke-linecap:round; stroke-dasharray:339; transition:stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1); }
+    .score-ring .ring-num { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .ring-num .big { font-family:'Playfair Display',serif; font-size:32px; font-weight:700; line-height:1; color:var(--white); }
+    .ring-num .small { font-size:10px; color:var(--dim); letter-spacing:2px; margin-top:2px; }
+    .result-label { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; letter-spacing:2px; margin-bottom:6px; color:var(--white); }
+    .result-sub { font-size:13px; color:var(--dim); letter-spacing:1px; margin-bottom:20px; }
+
+    .stats-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:20px; }
+    .stat-box { background:rgba(223,216,208,0.04); border:1px solid var(--border); border-radius:3px; padding:12px 8px; text-align:center; }
+    .stat-val { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--cream); }
+    .stat-lbl { font-size:8px; color:var(--dim); letter-spacing:2px; margin-top:4px; text-transform:uppercase; }
+
+    .review { margin:0 0 16px; max-height:220px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--dim) transparent; text-align:left; }
+    .review-item { padding:10px 14px; border-radius:2px; margin-bottom:7px; border-left:2px solid; background:rgba(223,216,208,0.02); font-size:12px; }
+    .review-item.pass { border-color:rgba(223,216,208,0.5); }
+    .review-item.fail { border-color:rgba(223,216,208,0.15); }
+    .review-item .q-text { color:var(--text); margin-bottom:4px; font-weight:500; font-size:12px; }
+    .review-item .a-your { font-size:11px; color:var(--dim); }
+    .review-item.fail .a-correct { font-size:11px; color:var(--cream); margin-top:3px; }
+
+    .btn-restart {
+      width:100%; padding:16px; background: var(--cream);
+      border:none; border-radius:3px; color:var(--black);
+      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600;
+      letter-spacing:4px; text-transform:uppercase; cursor:pointer; transition:all 0.25s;
+    }
+    .btn-restart:hover { background:var(--white); transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes popIn { 0%{transform:scale(0.97);opacity:0} 100%{transform:scale(1);opacity:1} }
+    .pop { animation:popIn 0.35s ease forwards; }
+    @keyframes flashCorrect { 0%,100%{box-shadow:0 0 0 rgba(223,216,208,0)} 50%{box-shadow:0 0 40px rgba(223,216,208,0.08)} }
+    @keyframes flashWrong { 0%,100%{box-shadow:0 0 0 rgba(0,0,0,0)} 50%{box-shadow:0 0 30px rgba(0,0,0,0.4)} }
+    .flash-correct { animation:flashCorrect 0.5s ease; }
+    .flash-wrong { animation:flashWrong 0.5s ease; }
+    .screen { animation:fadeUp 0.4s ease; }
   </style>
 </head>
 <body>
-<div class="box">
 
-  <!-- START SCREEN -->
-  <div id="startScreen">
-    <h2>PrismaX AI Quiz</h2>
+<div class="particles" id="particles"></div>
 
-    <p><strong>Mode:</strong></p>
-    <label><input type="radio" name="mode" value="timer" checked> Timer Mode</label><br>
-    <label><input type="radio" name="mode" value="notimer"> Non-Timer Mode</label>
+<div class="container">
+  <div class="header">
+    <div class="logo">PRISMAX AI</div>
 
-    <p><strong>Number of Questions:</strong></p>
-    <select id="questionCount">
-      <option value="10">10</option>
-      <option value="20">20</option>
-    </select>
-
-    <br><br>
-    <button onclick="startQuiz()">Start Quiz</button>
   </div>
 
-  <!-- QUIZ SCREEN -->
-  <div id="quizBox" style="display:none;">
-    <h3 id="question"></h3>
-    <div id="answers"></div>
-    <p id="timer"></p>
-    <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
+  <div class="card" id="mainCard">
+    <div class="card-top-line"></div>
+
+    <!-- START SCREEN -->
+    <div id="startScreen" class="screen">
+      <div class="section-label">SELECT MODE</div>
+      <div class="mode-group">
+        <div class="mode-option">
+          <input type="radio" name="mode" id="timerMode" value="timer" checked>
+          <label for="timerMode"><span class="icon">⏱️</span>TIMER</label>
+        </div>
+        <div class="mode-option">
+          <input type="radio" name="mode" id="freeMode" value="notimer">
+          <label for="freeMode"><span class="icon">🧠</span>FREE PLAY</label>
+        </div>
+      </div>
+
+      <div class="section-label">QUESTION COUNT</div>
+      <div class="count-group">
+        <div class="count-option">
+          <input type="radio" name="count" id="q10" value="10" checked>
+          <label for="q10">10<span class="qlabel">QUESTIONS</span></label>
+        </div>
+        <div class="count-option">
+          <input type="radio" name="count" id="q25" value="25">
+          <label for="q25">25<span class="qlabel">QUESTIONS</span></label>
+        </div>
+        <div class="count-option">
+          <input type="radio" name="count" id="q50" value="50">
+          <label for="q50">50<span class="qlabel">QUESTIONS</span></label>
+        </div>
+      </div>
+
+      <button class="btn-start" onclick="startQuiz()"><span>▶ INITIALIZE QUIZ</span></button>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="quizScreen" style="display:none;" class="screen">
+      <div class="score-badge" id="scoreBadge">0 / 0</div>
+
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <span id="qLabel">Q 1</span>
+          <span id="qTotal"></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="timer-wrap" id="timerWrap" style="display:none;">
+        <div class="timer-arc">
+          <svg width="44" height="44" viewBox="0 0 44 44">
+            <circle class="track" cx="22" cy="22" r="18"/>
+            <circle class="fill" id="timerArc" cx="22" cy="22" r="18"/>
+          </svg>
+          <div class="timer-num" id="timerNum">15</div>
+        </div>
+        <div class="timer-label">SECONDS REMAINING</div>
+        <div class="streak" id="streakBadge" style="display:none;">🔥 <span id="streakNum">0</span></div>
+      </div>
+
+      <div class="question-text" id="questionText"></div>
+      <div class="answers" id="answersDiv"></div>
+      <button class="btn-next" id="nextBtn" onclick="nextQuestion()" disabled>NEXT QUESTION →</button>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="resultsScreen" style="display:none;" class="screen results">
+      <div class="section-label">MISSION COMPLETE</div>
+      <div class="score-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="54"/>
+          <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="54" stroke="#00f5ff" stroke-dashoffset="339"/>
+        </svg>
+        <div class="ring-num">
+          <span class="big" id="bigScore" style="color:#00f5ff">0</span>
+          <span class="small" id="totalScore">/ 0</span>
+        </div>
+      </div>
+      <div class="result-label" id="resultLabel">—</div>
+      <div class="result-sub" id="resultSub"></div>
+
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" id="statAccuracy" style="color:var(--cyan)">0%</div><div class="stat-lbl">ACCURACY</div></div>
+        <div class="stat-box"><div class="stat-val" id="statStreak" style="color:var(--gold)">0</div><div class="stat-lbl">MAX STREAK</div></div>
+        <div class="stat-box"><div class="stat-val" id="statPoints" style="color:var(--pink)">0</div><div class="stat-lbl">PRISMA PTS</div></div>
+      </div>
+
+      <div class="review" id="reviewDiv"></div>
+      <button class="btn-restart" onclick="restartQuiz()">↺ RUN AGAIN</button>
+    </div>
   </div>
-
-  <!-- RESULT SCREEN -->
-  <div id="resultBox" style="display:none;"></div>
-
 </div>
 
 <script>
-  // ====== QUESTION POOL ======
-  const quiz = [
-    { question: "What is PrismaX AI?", answers: ["DeFi protocol", "Social OS for AI & Robots", "NFT marketplace"], correct: 1 },
-    { question: "What does PrismaX coordinate?", answers: ["Memes", "Robots & AI agents", "Gaming guilds"], correct: 1 },
-    { question: "PrismaX focuses on?", answers: ["Centralization", "On-chain coordination", "Mining"], correct: 1 }
+  // ===== PARTICLES =====
+  (function() {
+    const c = document.getElementById('particles');
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.animationDuration = (8 + Math.random() * 12) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (Math.random() > 0.7 ? '3px' : '2px');
+      if (Math.random() > 0.5) p.style.background = '#ff2d9a';
+      c.appendChild(p);
+    }
+  })();
+
+  // ===== QUESTION POOL (100 questions) =====
+  const QUIZ_POOL = [
+    { question: "What is PrismaX building the bridge for?", answers: ["Software to hardware", "Robotics and mainstream adoption", "Crypto to fiat", "AI to blockchain only"], correct: 1 },
+    { question: "PrismaX is backed by which top crypto accelerator?", answers: ["Y Combinator", "a16zcrypto CSX", "Binance Labs", "Paradigm"], correct: 1 },
+    { question: "PrismaX calls itself the service layer for what?", answers: ["Web3 gaming", "Physical AI robotics", "DeFi lending", "NFT minting"], correct: 1 },
+    { question: "The ultimate goal at PrismaX is to make everything that moves become...?", answers: ["Manual", "Autonomous", "Virtual", "Stationary"], correct: 1 },
+    { question: "What is the main bottleneck for scaling real-world AI robotics according to PrismaX?", answers: ["Lack of batteries", "Real-world data at scale", "Too many programmers", "Slow internet"], correct: 1 },
+    { question: "PrismaX turns human interaction into what for better robot models?", answers: ["Memes", "Teleoperation data", "Whitepapers", "Tweets"], correct: 1 },
+    { question: "Who hosts @RoboCon_AI?", answers: ["Tesla", "PrismaX", "Boston Dynamics", "OpenAI"], correct: 1 },
+    { question: "PrismaX enables people to become what?", answers: ["Robot owners only", "Robot operators", "AI trainers in labs", "Coders exclusively"], correct: 1 },
+    { question: "The PrismaX platform collects data from everyday robotic work to power what?", answers: ["The next decade of progress", "Short-term hype", "Virtual reality", "Stock trading"], correct: 0 },
+    { question: "PrismaX is described as an open coordination layer for what era?", answers: ["Decentralized robot world / RobotFi", "Centralized factories", "Mobile apps", "Gaming consoles"], correct: 0 },
+    { question: "PrismaX raised how much in seed funding (as of early 2026)?", answers: ["$5M", "$11M", "$50M", "$1M"], correct: 1 },
+    { question: "What does PrismaX use to let humans project skills into hard-to-reach environments?", answers: ["VR headsets only", "Teleoperation", "Drones exclusively", "Manual labor"], correct: 1 },
+    { question: "PrismaX closes the loop with continuous what for scaling autonomy?", answers: ["Deployment and feedback", "Shutdowns", "Hardware upgrades", "Price increases"], correct: 0 },
+    { question: "At PrismaX, robots learn through imitating what?", answers: ["Code only", "Human action (like making a sandwich)", "Random noise", "Virtual simulations"], correct: 1 },
+    { question: "PrismaX focuses on teleop because describing tasks in words/code isn't enough for...?", answers: ["Robotics (unlike LLMs)", "Chatbots", "Image generation", "Crypto wallets"], correct: 0 },
+    { question: "What robots did PrismaX bring to EthereumDenver booth?", answers: ["Baby Franklin, Owen, & Sparky", "Optimus & Atlas", "Roomba clones", "Drone swarms"], correct: 0 },
+    { question: "PrismaX generates what kind of data to accelerate humanoids?", answers: ["Social media likes", "Real-world teleop data", "Meme coins", "Weather stats"], correct: 1 },
+    { question: "PrismaX turns anyone into a robot operator through what?", answers: ["Coding bootcamps", "Their platform", "University degrees", "Buying hardware"], correct: 1 },
+    { question: "The PrismaX flywheel compounds into more capable what?", answers: ["Robots", "Tokens", "Websites", "Memes"], correct: 0 },
+    { question: "PrismaX is robotics-native and sets standards for robots, data, and...?", answers: ["Human work", "Gaming", "Finance", "Music"], correct: 0 },
+    { question: "What is teleoperation at PrismaX?", answers: ["Remote human control of robots", "Auto-pilot only", "Simulation training", "Hardware building"], correct: 0 },
+    { question: "Teleop at PrismaX gives robots a clean what signal?", answers: ["Human-guided", "Random", "Delayed", "Encrypted"], correct: 0 },
+    { question: "With many operators controlling many robots, PrismaX collects data...?", answers: ["Far faster than any single lab", "Slower", "Only in sims", "Never"], correct: 0 },
+    { question: "Controlling a robot on PrismaX feels a lot like playing what?", answers: ["A video game in real life", "Chess", "Poker", "Solitaire"], correct: 0 },
+    { question: "Beginners should try PrismaX teleop because it requires no what?", answers: ["Coding", "Money", "Internet", "Robots"], correct: 0 },
+    { question: "When you teleop on PrismaX, every move you make helps train...?", answers: ["AI", "Humans", "Competitors", "Nothing"], correct: 0 },
+    { question: "PrismaX lets members remotely operate real robots to shape how AI learns to interact with...?", answers: ["The physical world", "The metaverse", "Social media", "Code editors"], correct: 0 },
+    { question: "Teleop is one of the most direct ways to contribute to the...?", answers: ["Robotics revolution", "Meme coin pumps", "NFT drops", "DAO votes"], correct: 0 },
+    { question: "PrismaX members project their skills into environments they...?", answers: ["Couldn't reach otherwise", "Already live in", "Avoid", "Simulate"], correct: 0 },
+    { question: "In PrismaX, humans remain the driving intelligence behind every...?", answers: ["Robotic action", "Token transfer", "Tweet", "Game level"], correct: 0 },
+    { question: "PrismaX's teleop network connects teleoperators, robot owners, and...?", answers: ["Robotics companies", "Gamers", "Chefs", "Artists"], correct: 0 },
+    { question: "What do teleoperators complete on PrismaX to generate training data?", answers: ["Real-world tasks", "Virtual quests", "Surveys", "Captchas"], correct: 0 },
+    { question: "PrismaX's open bridge is between humans and...?", answers: ["Robots in the decentralized era", "Only centralized bots", "Cars", "Phones"], correct: 0 },
+    { question: "Teleop data at PrismaX is used to train models that generalize across...?", answers: ["Tasks, robots, environments", "Only one factory", "Simulations", "Codebases"], correct: 0 },
+    { question: "PrismaX allows remote human operation and...?", answers: ["Data collection for model training", "Token farming", "Gaming tournaments", "Art creation"], correct: 0 },
+    { question: "What kind of tasks can you help robots complete via PrismaX teleop?", answers: ["Simple real-world ones (like pharmacy management demos)", "Only flying", "Only swimming", "Imaginary"], correct: 0 },
+    { question: "PrismaX turns everyday robotic work into the data engine for the next decade of...?", answers: ["Progress", "Stagnation", "Downtime", "Bugs"], correct: 0 },
+    { question: "Humans at PrismaX are still key because robots need what for complex actions?", answers: ["Human-guided signals", "Infinite compute", "No data", "Luck"], correct: 0 },
+    { question: "PrismaX's coordination layer allows different robotic systems to...?", answers: ["Coordinate smoothly without central suppliers", "Compete aggressively", "Stay isolated", "Break often"], correct: 0 },
+    { question: "Teleop on PrismaX helps robots go from human-controlled to...?", answers: ["Autonomous over time", "More manual", "Virtual only", "Retired"], correct: 0 },
+    { question: "More data at PrismaX leads to...?", answers: ["Broader skills & better generalization", "Slower robots", "Higher costs", "Less autonomy"], correct: 0 },
+    { question: "PrismaX's training loop: collect teleop data → train → robots start completing tasks...?", answers: ["Autonomously", "With more humans", "In sim only", "Never"], correct: 0 },
+    { question: "Foundation models at PrismaX turn raw teleop data into systems that generalize across...?", answers: ["Tasks, robots, real-world environments", "Only labs", "Virtual worlds", "Paper simulations"], correct: 0 },
+    { question: "Physical AI compounds at PrismaX through what?", answers: ["The data flywheel", "Magic", "Ads", "Donations"], correct: 0 },
+    { question: "PrismaX collects diverse motion data far faster than any...?", answers: ["Single lab or company", "Government", "School", "Hobby group"], correct: 0 },
+    { question: "The same robot at PrismaX can adapt to new setups with just a few...?", answers: ["Examples", "Years", "Dollars", "Errors"], correct: 0 },
+    { question: "Teleop data is clean and...?", answers: ["Human-guided", "Noisy", "Fake", "Delayed"], correct: 0 },
+    { question: "PrismaX accelerates intelligence and reliability of...?", answers: ["Humanoids and autonomous systems", "Chatbots", "Websites", "Phones"], correct: 0 },
+    { question: "Continuous deployment and feedback at PrismaX scales autonomy with...?", answers: ["Reliability", "Bugs", "Downtime", "Cost"], correct: 0 },
+    { question: "Robots running autonomously in a factory was really the main what at PrismaX?", answers: ["Goal", "Side quest", "Failure", "Joke"], correct: 0 },
+    { question: "PrismaX's data helps robots complete similar tasks even in...?", answers: ["New setups", "Old code", "Virtual only", "No light"], correct: 0 },
+    { question: "What compounds into more capable robots at PrismaX?", answers: ["More data", "Less humans", "More hype", "Fewer tasks"], correct: 0 },
+    { question: "PrismaX focuses on teleop to give robots better what than descriptions?", answers: ["Action imitation signals", "Text prompts", "Images", "Sounds"], correct: 0 },
+    { question: "The growth in robotics mindshare reflects what PrismaX sees every day?", answers: ["Real progress", "Stagnation", "Decline", "Jokes"], correct: 0 },
+    { question: "PrismaX generates high-value training data for...?", answers: ["Physical AI", "Memes", "Tokens only", "Games"], correct: 0 },
+    { question: "Teleop data at PrismaX is far more valuable than what for robotics?", answers: ["Lab-only collection", "Social media", "Whitepapers", "Tweets"], correct: 0 },
+    { question: "With scale, PrismaX's network can collect diverse data...?", answers: ["Faster", "Slower", "Never", "Randomly"], correct: 0 },
+    { question: "Foundation models help robots generalize beyond...?", answers: ["Single tasks", "All tasks", "No tasks", "Virtual"], correct: 0 },
+    { question: "PrismaX's flywheel is powered by real-world what?", answers: ["Teleop data", "Simulations", "Guesses", "Hype"], correct: 0 },
+    { question: "More teleop = more data = more...?", answers: ["Autonomy & capability", "Manual work", "Errors", "Costs"], correct: 0 },
+    { question: "PrismaX powers affordable AI and...?", answers: ["Robots", "Laptops", "Phones", "Cars only"], correct: 0 },
+    { question: "From Models to Machines is about scaling what?", answers: ["Physical AI", "Virtual reality", "Finance", "Gaming"], correct: 0 },
+    { question: "PrismaX demo shows robots going from teleop to autonomous with...?", answers: ["Few examples", "Infinite time", "No data", "Magic"], correct: 0 },
+    { question: "Everything that moves will become autonomous thanks to scaling...?", answers: ["Real-world data", "Compute only", "Hype", "Memes"], correct: 0 },
+    { question: "PrismaX helps robots handle real-world environments through...?", answers: ["Generalization from data", "Fixed scripts", "No learning", "Shutdowns"], correct: 0 },
+    { question: "Physical AI at PrismaX relies on continuous what?", answers: ["Feedback loops", "One-time training", "No updates", "Manual fixes"], correct: 0 },
+    { question: "Robots at PrismaX can manage whole what autonomously in demos?", answers: ["Pharmacy", "Kitchen only", "Office", "Nothing"], correct: 0 },
+    { question: "PrismaX's vision includes robots in retail, logistics, healthcare — true mainstream...?", answers: ["Adoption", "Niche use", "Lab only", "Failure"], correct: 0 },
+    { question: "Autonomy scales with reliability at PrismaX via closed...?", answers: ["Loop", "Door", "Wallet", "Game"], correct: 0 },
+    { question: "PrismaX turns teleop into foundation models for...?", answers: ["Broader real-world skills", "Narrow tasks", "Virtual only", "No skills"], correct: 0 },
+    { question: "The next big trend PrismaX is pushing?", answers: ["Robotics era in 2026+", "Bear market", "Memes only", "Downtime"], correct: 0 },
+    { question: "PrismaX enables automation in stores like...?", answers: ["Pharmacies", "Only factories", "Virtual shops", "No stores"], correct: 0 },
+    { question: "Humanoids at PrismaX get smarter from...?", answers: ["Teleop data at scale", "Code alone", "Random moves", "No data"], correct: 0 },
+    { question: "PrismaX's booth lets you teleop a real...?", answers: ["Robot arm", "Drone", "Car", "Phone"], correct: 0 },
+    { question: "Physical AI progress at PrismaX is reflected in growing...?", answers: ["Robotics mindshare", "Token dumps", "Complaints", "Silence"], correct: 0 },
+    { question: "Robots adapt to new tasks at PrismaX with...?", answers: ["Just a few examples", "Years of training", "No adaptation", "Human restart"], correct: 0 },
+    { question: "PrismaX's service layer advances intelligence for...?", answers: ["Physical AI", "Abstract AI", "Financial AI", "Gaming AI"], correct: 0 },
+    { question: "Teleop helps robots learn interaction with the...?", answers: ["Physical world", "Digital only", "Imaginary", "Past"], correct: 0 },
+    { question: "PrismaX's goal: more capable robots through compounding...?", answers: ["Intelligence", "Size", "Noise", "Cost"], correct: 0 },
+    { question: "The future PrismaX is building: mainstream adoption of...?", answers: ["Robotics", "Isolation", "Manual only", "No tech"], correct: 0 },
+    { question: "What event does @PrismaXai host?", answers: ["RoboCon_AI", "ETHDenver only", "Devcon", "NFT.NYC"], correct: 0 },
+    { question: "At EthereumDenver, PrismaX had a booth with live...?", answers: ["Robot teleop", "Token airdrops", "Music", "Food"], correct: 0 },
+    { question: "PrismaX encouraged #ProofOfRobots photos with their bots at...?", answers: ["EthereumDenver", "Home", "Lab", "Virtual"], correct: 0 },
+    { question: "PrismaX Co-Founder & CEO spoke on scaling Physical AI at...?", answers: ["Futurllama Stage", "Main stage only", "No stage", "Twitter Spaces"], correct: 0 },
+    { question: "Come by the PrismaX booth to meet Baby Franklin, Owen, &...?", answers: ["Sparky", "Optimus", "Atlas", "Roomba"], correct: 0 },
+    { question: "RoboCon_AI is hosted by PrismaX to push robotics...?", answers: ["Adoption & innovation", "Niche talks", "Memes", "Silence"], correct: 0 },
+    { question: "PrismaX events feature panels on affordable power for AI and...?", answers: ["Robots", "Phones", "Cars", "Laptops"], correct: 0 },
+    { question: "What hashtag for photos with PrismaX robots at events?", answers: ["#ProofOfRobots", "#HODL", "#GM", "#LFG"], correct: 0 },
+    { question: "PrismaX team at events lets you teleop a real robot arm — feels like...?", answers: ["Real-life video game", "Boring demo", "Lecture", "Nothing"], correct: 0 },
+    { question: "PrismaX merch giveaway at events for completing...?", answers: ["Photo quests with robots", "Surveys", "Codes", "Nothing"], correct: 0 },
+    { question: "From Models to Machines panel featured PrismaX CEO alongside...?", answers: ["Other AI/robotics leaders", "Solo", "No one", "Memers"], correct: 0 },
+    { question: "PrismaX shows up at crypto events like EthereumDenver to demo...?", answers: ["Real robots", "Whitepapers", "Tokens", "Jokes"], correct: 0 },
+    { question: "RoboCon_AI focuses on bridging robotics with...?", answers: ["Mainstream & crypto", "Labs only", "Past tech", "No bridge"], correct: 0 },
+    { question: "PrismaX community can join to become robot...?", answers: ["Operators", "Viewers", "Critics", "Nothing"], correct: 0 },
+    { question: "Events like ETHDenver let you say hi to the PrismaX...?", answers: ["Team", "Bots only", "No one", "Competitors"], correct: 0 },
+    { question: "PrismaX pushes robotics mindshare growth through events and...?", answers: ["Real demos", "Hype posts", "Silence", "Ads"], correct: 0 },
+    { question: "What stage hosted PrismaX talk on scaling Physical AI?", answers: ["Futurllama", "Main crypto", "Gaming", "None"], correct: 0 },
+    { question: "PrismaX's RoboCon is about accelerating the robotics...?", answers: ["Revolution", "Slowdown", "End", "Joke"], correct: 0 },
+    { question: "Join PrismaX at prismax.ai to help shape the future of...?", answers: ["Physical AI & robots", "Memes", "Finance only", "Gaming"], correct: 0 },
+    { question: "The big vision @PrismaXai is building toward?", answers: ["Mainstream robotics adoption via teleop, data, and autonomy", "Niche labs forever", "Manual everything", "No robots"], correct: 0 },
   ];
 
-  // ====== GLOBAL VARIABLES ======
-  let mode = "timer";
-  let quizCount = 10;
-  let selectedQuiz = [];
-  let current = 0;
-  let score = 0;
-  let selectedAnswer = null;
-  let userAnswers = [];
-  let timerInterval;
+  // ===== STATE =====
+  let mode, quizCount, selectedQuiz, current, score, selectedAnswer, userAnswers;
+  let timerInterval, streak, maxStreak;
+  const TIMER_SECONDS = 15;
 
-  // ====== SHUFFLE FUNCTION ======
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+  // ===== HELPERS =====
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return array;
+    return a;
   }
 
-  // ====== BUILD QUIZ ======
   function buildQuiz(pool, count) {
-    let result = [];
-    while(result.length < count) {
-      result = result.concat(shuffle([...pool]));
-    }
-    return result.slice(0, count);
+    // Shuffle answers within each question, track correct answer dynamically
+    const shuffled = shuffle(pool).slice(0, Math.min(count, pool.length));
+    return shuffled.map(q => {
+      const indexed = q.answers.map((a, i) => ({ text: a, isCorrect: i === q.correct }));
+      const shuffledAnswers = shuffle(indexed);
+      return {
+        question: q.question,
+        answers: shuffledAnswers.map(a => a.text),
+        correct: shuffledAnswers.findIndex(a => a.isCorrect)
+      };
+    });
   }
 
-  // ====== START QUIZ ======
+  // ===== START =====
   function startQuiz() {
     mode = document.querySelector('input[name="mode"]:checked').value;
-    quizCount = parseInt(document.getElementById("questionCount").value);
-
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("quizBox").style.display = "block";
-
-    current = 0;
-    score = 0;
+    quizCount = parseInt(document.querySelector('input[name="count"]:checked').value);
+    current = 0; score = 0; streak = 0; maxStreak = 0;
     userAnswers = [];
+    selectedQuiz = buildQuiz(QUIZ_POOL, quizCount);
 
-    selectedQuiz = buildQuiz(quiz, quizCount);
+    document.getElementById('startScreen').style.display = 'none';
+    const qs = document.getElementById('quizScreen');
+    qs.style.display = 'block';
+    qs.classList.add('pop');
+    setTimeout(() => qs.classList.remove('pop'), 400);
     loadQuestion();
   }
 
-  // ====== LOAD QUESTION ======
+  // ===== LOAD QUESTION =====
   function loadQuestion() {
     clearInterval(timerInterval);
     selectedAnswer = null;
-
     const q = selectedQuiz[current];
-    document.getElementById("question").innerText = `Question ${current+1} of ${selectedQuiz.length}: ${q.question}`;
+    const pct = (current / selectedQuiz.length) * 100;
 
-    const answersDiv = document.getElementById("answers");
-    answersDiv.innerHTML = "";
-    q.answers.forEach((ans, i) => {
-      const btn = document.createElement("button");
-      btn.innerText = ans;
+    document.getElementById('qLabel').textContent = `Q ${current + 1}`;
+    document.getElementById('qTotal').textContent = `${current + 1} / ${selectedQuiz.length}`;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('scoreBadge').textContent = `${score} / ${current}`;
+    document.getElementById('questionText').textContent = q.question;
+
+    const answersDiv = document.getElementById('answersDiv');
+    answersDiv.innerHTML = '';
+    ['A','B','C','D'].slice(0, q.answers.length).forEach((lbl, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.innerHTML = `<span class="idx">${lbl}</span>${q.answers[i]}`;
       btn.onclick = () => selectAnswer(btn, i);
       answersDiv.appendChild(btn);
     });
 
-    const nextBtn = document.getElementById("nextBtn");
-    const timerEl = document.getElementById("timer");
+    document.getElementById('nextBtn').disabled = true;
+    const timerWrap = document.getElementById('timerWrap');
 
-    if(mode === "timer") {
-      nextBtn.style.display = "block";
-      nextBtn.disabled = true;
-      timerEl.style.display = "block";
+    if (mode === 'timer') {
+      timerWrap.style.display = 'flex';
+      updateTimerArc(TIMER_SECONDS, TIMER_SECONDS);
       startTimer();
     } else {
-      nextBtn.style.display = "none";
-      timerEl.innerText = "";
+      timerWrap.style.display = 'none';
     }
-  }
 
-  // ====== SELECT ANSWER ======
-  function selectAnswer(button, index) {
-    document.querySelectorAll("#answers button").forEach(b => b.classList.remove("selected"));
-    button.classList.add("selected");
-    selectedAnswer = index;
-
-    if(mode === "timer") {
-      document.getElementById("nextBtn").disabled = false;
+    const sb = document.getElementById('streakBadge');
+    if (streak >= 2) {
+      sb.style.display = 'inline-flex';
+      document.getElementById('streakNum').textContent = streak;
     } else {
-      setTimeout(nextQuestion, 400);
+      sb.style.display = 'none';
     }
   }
 
-  // ====== TIMER ======
+  // ===== TIMER =====
+  function updateTimerArc(left, total) {
+    const arc = document.getElementById('timerArc');
+    const num = document.getElementById('timerNum');
+    const pct = left / total;
+    arc.style.strokeDashoffset = 113 * (1 - pct);
+    arc.style.stroke = pct > 0.5 ? '#DFD8D0' : pct > 0.25 ? '#b0a89e' : '#6b6460';
+    num.textContent = left;
+    num.style.color = pct > 0.25 ? '#DFD8D0' : '#6b6460';
+  }
+
   function startTimer() {
-    let timeLeft = 3;
-    const timerEl = document.getElementById("timer");
-    timerEl.innerText = `Time left: ${timeLeft}s`;
-
+    let left = TIMER_SECONDS;
     timerInterval = setInterval(() => {
-      timeLeft--;
-      timerEl.innerText = `Time left: ${timeLeft}s`;
-
-      if(timeLeft <= 0) {
+      left--;
+      updateTimerArc(left, TIMER_SECONDS);
+      if (left <= 0) {
         clearInterval(timerInterval);
-        nextQuestion();
+        streak = 0;
+        forceNext();
       }
     }, 1000);
   }
 
-  // ====== NEXT QUESTION ======
-  function nextQuestion() {
-    if(mode === "timer" && selectedAnswer === null) return;
+  function forceNext() {
+    document.querySelectorAll('.answer-btn').forEach((b, i) => {
+      b.disabled = true;
+      if (i === selectedQuiz[current].correct) b.classList.add('correct');
+    });
+    recordAndAdvance();
+  }
 
-    userAnswers.push({
-      question: selectedQuiz[current].question,
-      selected: selectedAnswer,
-      correct: selectedQuiz[current].correct,
-      answers: selectedQuiz[current].answers
+  // ===== SELECT ANSWER =====
+  function selectAnswer(button, index) {
+    if (selectedAnswer !== null) return;
+    clearInterval(timerInterval);
+
+    document.querySelectorAll('.answer-btn').forEach(b => {
+      b.classList.remove('selected');
+      b.disabled = true;
     });
 
-    if(selectedAnswer === selectedQuiz[current].correct) score++;
+    selectedAnswer = index;
+    const correct = selectedQuiz[current].correct;
+    const card = document.getElementById('mainCard');
 
-    current++;
-    if(current < selectedQuiz.length) {
-      loadQuestion();
+    if (index === correct) {
+      button.classList.add('correct');
+      streak++;
+      maxStreak = Math.max(maxStreak, streak);
+      card.classList.add('flash-correct');
+      setTimeout(() => card.classList.remove('flash-correct'), 500);
     } else {
-      showResults();
+      button.classList.add('wrong');
+      document.querySelectorAll('.answer-btn')[correct].classList.add('correct');
+      streak = 0;
+      card.classList.add('flash-wrong');
+      setTimeout(() => card.classList.remove('flash-wrong'), 500);
+    }
+
+    if (mode === 'timer') {
+      document.getElementById('nextBtn').disabled = false;
+    } else {
+      setTimeout(() => recordAndAdvance(), 900);
     }
   }
 
-  // ====== SHOW RESULTS ======
-  function showResults() {
-    document.getElementById("quizBox").style.display = "none";
-    const box = document.getElementById("resultBox");
-    box.style.display = "block";
+  // ===== NEXT =====
+  function nextQuestion() {
+    if (selectedAnswer === null) return;
+    recordAndAdvance();
+  }
 
-    let html = `<h2>Score: ${score} / ${selectedQuiz.length}</h2>`;
-    userAnswers.forEach((a, i) => {
-      html += `<p>
-        <strong>Q${i+1}:</strong> ${a.question}<br>
-        Your answer: ${a.selected !== null ? a.answers[a.selected] : "No answer"}<br>
-        Correct answer: ${a.answers[a.correct]}
-      </p>`;
+  function recordAndAdvance() {
+    const correct = selectedQuiz[current].correct;
+    userAnswers.push({
+      question: selectedQuiz[current].question,
+      selected: selectedAnswer,
+      correct,
+      answers: selectedQuiz[current].answers
     });
-    box.innerHTML = html;
+    if (selectedAnswer === correct) score++;
+    current++;
+    current < selectedQuiz.length ? loadQuestion() : showResults();
+  }
+
+  // ===== RESULTS =====
+  function showResults() {
+    document.getElementById('quizScreen').style.display = 'none';
+    const rs = document.getElementById('resultsScreen');
+    rs.style.display = 'block';
+
+    const pct = score / selectedQuiz.length;
+    const prismaPoints = score * 500 + (pct === 1 ? 1000 : 0);
+
+    document.getElementById('bigScore').textContent = score;
+    document.getElementById('totalScore').textContent = `/ ${selectedQuiz.length}`;
+    document.getElementById('statAccuracy').textContent = Math.round(pct * 100) + '%';
+    document.getElementById('statStreak').textContent = maxStreak;
+    document.getElementById('statPoints').textContent = prismaPoints.toLocaleString();
+
+    const ringFill = document.getElementById('ringFill');
+    let label, sub, color;
+    if (pct >= 0.9) { label = 'ELITE AGENT'; sub = 'Maximum protocol efficiency achieved 🔥'; color = '#00ff88'; }
+    else if (pct >= 0.75) { label = 'FIELD OPERATIVE'; sub = 'Strong performance. Keep training.'; color = '#00f5ff'; }
+    else if (pct >= 0.5) { label = 'RECRUIT'; sub = 'Potential detected. Study the protocol.'; color = '#ffd700'; }
+    else { label = 'TRAINEE'; sub = 'Return to base for re-calibration.'; color = '#ff2d9a'; }
+
+    document.getElementById('resultLabel').textContent = label;
+    document.getElementById('resultSub').textContent = sub;
+    ringFill.style.stroke = '#DFD8D0';
+    ringFill.style.filter = `drop-shadow(0 0 4px rgba(223,216,208,0.3))`;
+
+    setTimeout(() => { ringFill.style.strokeDashoffset = 339 * (1 - pct); }, 100);
+
+    const reviewDiv = document.getElementById('reviewDiv');
+    reviewDiv.innerHTML = '';
+    userAnswers.forEach((a, i) => {
+      const pass = a.selected === a.correct;
+      const div = document.createElement('div');
+      div.className = `review-item ${pass ? 'pass' : 'fail'}`;
+      div.innerHTML = `
+        <div class="q-text">${pass ? '✓' : '✗'} Q${i+1}: ${a.question}</div>
+        <div class="a-your">Your answer: <strong>${a.selected !== null ? a.answers[a.selected] : 'No answer (timeout)'}</strong></div>
+        ${!pass ? `<div class="a-correct">✓ Correct: ${a.answers[a.correct]}</div>` : ''}
+      `;
+      reviewDiv.appendChild(div);
+    });
+  }
+
+  // ===== RESTART =====
+  function restartQuiz() {
+    document.getElementById('resultsScreen').style.display = 'none';
+    const ss = document.getElementById('startScreen');
+    ss.style.display = 'block';
+    ss.classList.add('pop');
+    setTimeout(() => ss.classList.remove('pop'), 400);
   }
 </script>
 </body>
